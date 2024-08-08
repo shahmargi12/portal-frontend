@@ -264,15 +264,18 @@ export const apiSlice = createApi({
     }),
     fetchProvidedServices: builder.query<ProvidedServices, PaginFetchArgs>({
       query: (fetchArgs) => {
-        const url = `/api/services/provided?page=${fetchArgs.page}&size=15`
-        if (fetchArgs?.args?.statusFilter && !fetchArgs?.args?.expr) {
-          return `${url}&statusId=${fetchArgs?.args?.statusFilter}`
-        } else if (fetchArgs?.args?.expr && !fetchArgs?.args?.statusFilter) {
-          return `${url}&statusId=${StatusIdEnum.All}&offerName=${fetchArgs?.args?.expr}`
-        } else if (fetchArgs?.args?.expr && fetchArgs?.args?.statusFilter) {
-          return `${url}&statusId=${fetchArgs?.args?.statusFilter}&offerName=${fetchArgs?.args?.expr}`
-        } else {
-          return `${url}&statusId=${StatusIdEnum.All}`
+        return {
+          url: '/api/services/provided',
+          params: {
+            page: fetchArgs.page,
+            size: 15,
+            statusId: fetchArgs?.args?.statusFilter || StatusIdEnum.All,
+            ...(fetchArgs?.args?.expr
+              ? {
+                  offerName: fetchArgs?.args?.expr,
+                }
+              : {}),
+          },
         }
       },
     }),

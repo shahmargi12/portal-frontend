@@ -18,7 +18,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   PageHeader,
@@ -66,20 +66,20 @@ interface CardItemsInterface extends CardItems {
 export default function ServiceListOverview() {
   const { t } = useTranslation('servicerelease')
   const [items, setItems] = useState<CardItems[]>([])
-  const [group, setGroup] = useState<string>('')
+  const [group, setGroup] = useState<string>(StatusIdEnum.All)
   const [searchExpr, setSearchExpr] = useState<string>('')
   const [page, setPage] = useState<number>(0)
   const navigate = useNavigate()
-  const [argsData, setArgsData] = useState({
-    page,
-    args: {
-      expr: '',
-      statusFilter: '',
-    },
-  })
+  const searchInputRef = useRef<HTMLInputElement>()
   const { state } = useLocation()
   const { data, isFetching, isSuccess, refetch } =
-    useFetchProvidedServicesQuery(argsData)
+    useFetchProvidedServicesQuery({
+      page,
+      args: {
+        expr: searchExpr,
+        statusFilter: group,
+      },
+    })
   const dispatch = useDispatch()
   const theme = useTheme()
 
@@ -118,13 +118,6 @@ export default function ServiceListOverview() {
   const setView = (e: React.MouseEvent<HTMLInputElement>) => {
     const viewValue = e.currentTarget.value
     setGroup(viewValue)
-    setArgsData({
-      page: 0,
-      args: {
-        expr: '',
-        statusFilter: viewValue,
-      },
-    })
     setPage(0)
   }
 
@@ -154,13 +147,7 @@ export default function ServiceListOverview() {
   const debouncedSearch = useMemo(
     () =>
       debounce((expr: string) => {
-        setArgsData({
-          page,
-          args: {
-            expr,
-            statusFilter: group,
-          },
-        })
+        setSearchExpr(expr)
       }, 400),
     [group, page]
   )
@@ -171,20 +158,12 @@ export default function ServiceListOverview() {
       if (!validateExpr) {
         return
       }
-      setSearchExpr(expr)
       debouncedSearch(expr)
     },
     [debouncedSearch]
   )
 
   const nextPage = () => {
-    setArgsData({
-      page: page + 1,
-      args: {
-        expr: '',
-        statusFilter: group,
-      },
-    })
     setPage(page + 1)
   }
 
@@ -214,7 +193,7 @@ export default function ServiceListOverview() {
               <SearchInput
                 sx={{ minWidth: '544px' }}
                 margin={'normal'}
-                value={searchExpr}
+                inputRef={searchInputRef}
                 onChange={(e) => {
                   onSearch(e.target.value)
                 }}
